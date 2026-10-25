@@ -603,18 +603,25 @@ function syncSlider() {
     sliderValue.textContent = kph;
 }
 
+// The set_speed command uses the same command code as "start": sent while the treadmill
+// is stopped or paused, it starts the belt. So it is only sent while running; otherwise
+// the new target speed is simply used by the next Démarrer / Reprendre.
+function applyTargetSpeed() {
+    if (runningState === 1) send_data(makePacket("set_speed", curTargetSpeed));
+}
+
 speedUpBtn.addEventListener('click', () => {
     if (!connected) return;
     curTargetSpeed = Math.min(curTargetSpeed + 100, 6000);
     syncSlider();
-    send_data(makePacket("set_speed", curTargetSpeed));
+    applyTargetSpeed();
 });
 
 speedDownBtn.addEventListener('click', () => {
     if (!connected) return;
     curTargetSpeed = Math.max(curTargetSpeed - 100, 1000);
     syncSlider();
-    send_data(makePacket("set_speed", curTargetSpeed));
+    applyTargetSpeed();
 });
 
 speedSlider.addEventListener('input', () => {
@@ -623,7 +630,7 @@ speedSlider.addEventListener('input', () => {
 speedSlider.addEventListener('change', () => {
     if (!connected) return;
     curTargetSpeed = Math.round(parseFloat(speedSlider.value) * 1000);
-    send_data(makePacket("set_speed", curTargetSpeed));
+    applyTargetSpeed();
 });
 
 // --- Initialize ---

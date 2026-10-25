@@ -437,7 +437,7 @@
     </style>
 </head>
 <body>
-    <div id="appVersion" style="position:fixed;top:0;left:0;padding:6px 10px;font-size:11px;color:#999;z-index:10001;user-select:none;">v1.10</div>
+    <div id="appVersion" style="position:fixed;top:0;left:0;padding:6px 10px;font-size:11px;color:#999;z-index:10001;user-select:none;">v1.11</div>
     <!-- Diagnostic : toucher 5 fois la version pour afficher les données brutes du tapis -->
     <pre id="debugPanel" hidden></pre>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-tabs">
@@ -567,8 +567,8 @@
     <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
     <!-- ?v= : à changer avec la version affichée (appVersion) et CACHE_NAME dans sw.js,
          pour que le navigateur ne mélange jamais une nouvelle page avec d'anciens scripts -->
-    <script src="treadmill.js?v=1.10"></script>
-    <script src="programs.js?v=1.10"></script>
+    <script src="treadmill.js?v=1.11"></script>
+    <script src="programs.js?v=1.11"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker non enregistré :', err));
