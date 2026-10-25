@@ -391,7 +391,8 @@ function handleNotification(event) {
     const current_speed = u16(3);
     const distance = u32(7);
     const calories = (value.getUint8(18) << 8) | value.getUint8(19);
-    const steps = u32(14);
+    // Steps: bytes 43-44 on the 50-byte messages (bytes 14-17 always stay at 0 on this model)
+    const steps = value.byteLength >= 45 ? u16(43) : u32(14);
     const duration = u32(20);
     const flags = value.getUint8(26);
     const unit_mode = (flags & 128) === 128 ? 1 : 0;
@@ -418,7 +419,7 @@ function handleNotification(event) {
     renderDebug(bytes,
         "vitesse [3-4]     = " + current_speed + "\n" +
         "distance [7-10]   = " + distance + "\n" +
-        "pas [14-17]       = " + steps + "\n" +
+        "pas [" + (value.byteLength >= 45 ? "43-44" : "14-17") + "]       = " + steps + "\n" +
         "calories [18-19]  = " + calories + "\n" +
         "durée [20-23]     = " + duration + "\n" +
         "état [26]         = 0x" + flags.toString(16).padStart(2, "0"));
