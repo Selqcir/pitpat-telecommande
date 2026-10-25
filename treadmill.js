@@ -226,7 +226,25 @@ function send_data(packet) {
 }
 
 // --- Bluetooth Logic ---
+function bluetoothErrorMessage(err) {
+    switch (err && err.name) {
+        case 'NotFoundError':
+            return "Aucun tapis sélectionné. Vérifiez que le tapis est allumé, et que le Bluetooth et la localisation du téléphone sont activés.";
+        case 'SecurityError':
+        case 'NotAllowedError':
+            return "Bluetooth refusé pour ce site : autorisez-le dans Chrome (⋮ → Paramètres → Paramètres des sites → Bluetooth).";
+        case 'NetworkError':
+            return "Connexion au tapis impossible. Rapprochez-vous du tapis et réessayez.";
+        default:
+            return "Erreur Bluetooth : " + ((err && err.message) || err);
+    }
+}
+
 async function connectBluetooth() {
+    if (!navigator.bluetooth) {
+        showToast("Bluetooth web indisponible dans ce navigateur : ouvrez l'application dans Chrome.", 8000);
+        return;
+    }
     setStatus('Connecting');
     setConnectButton('connecting');
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
@@ -280,7 +298,7 @@ async function connectBluetooth() {
         if (loadingOverlay) loadingOverlay.style.display = 'none';
     } catch (err) {
         console.error("Bluetooth connection error:", err);
-        showToast("Erreur Bluetooth : " + err);
+        showToast(bluetoothErrorMessage(err), 8000);
         setStatus('Disconnected');
         connected = false;
         setConnectButton('disconnected');

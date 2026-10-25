@@ -415,7 +415,7 @@
     </style>
 </head>
 <body>
-    <div id="appVersion" style="position:fixed;top:6px;left:8px;font-size:11px;color:#999;z-index:10001;pointer-events:none;">v1.6</div>
+    <div id="appVersion" style="position:fixed;top:6px;left:8px;font-size:11px;color:#999;z-index:10001;pointer-events:none;">v1.7</div>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-tabs">
         <header class="mdl-layout__header mdl-layout__header--scroll" style="justify-content:center;display:flex;">
             <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
@@ -541,8 +541,10 @@
         <button class="mdl-snackbar__action" type="button"></button>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
-    <script src="treadmill.js"></script>
-    <script src="programs.js"></script>
+    <!-- ?v= : à changer avec la version affichée (appVersion) et CACHE_NAME dans sw.js,
+         pour que le navigateur ne mélange jamais une nouvelle page avec d'anciens scripts -->
+    <script src="treadmill.js?v=1.7"></script>
+    <script src="programs.js?v=1.7"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker non enregistré :', err));

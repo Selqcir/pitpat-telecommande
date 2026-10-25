@@ -5,7 +5,7 @@
 // - Bibliothèques externes (CDN, polices) : cache d'abord, elles ne changent pas.
 // Changer CACHE_NAME pour forcer le nettoyage de l'ancien cache.
 
-const CACHE_NAME = 'pitpat-v5';
+const CACHE_NAME = 'pitpat-v6';
 const NETWORK_TIMEOUT = 3000;
 
 const APP_FILES = [
@@ -33,7 +33,8 @@ const CDN_FILES = [
 self.addEventListener('install', (event) => {
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
-        await cache.addAll(APP_FILES);
+        // 'reload' bypasses the browser HTTP cache (GitHub Pages keeps files 10 min)
+        await cache.addAll(APP_FILES.map((url) => new Request(url, { cache: 'reload' })));
         // A missing CDN file must not block the installation
         await Promise.allSettled(CDN_FILES.map((url) => cache.add(new Request(url, { mode: 'cors' }))));
         await self.skipWaiting();
@@ -51,7 +52,8 @@ self.addEventListener('activate', (event) => {
 async function networkFirst(event) {
     const { request } = event;
     const cache = await caches.open(CACHE_NAME);
-    const network = fetch(request).then((response) => {
+    // 'no-cache' revalidates with the server, so a fresh page never gets a stale script
+    const network = fetch(request, { cache: 'no-cache' }).then((response) => {
         if (response.ok) cache.put(request, response.clone());
         return response;
     });
