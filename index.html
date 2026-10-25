@@ -396,6 +396,28 @@
         .modal-btn--primary { background: #6a1b9a; color: #fff; }
         .modal-btn:disabled { opacity: .45; cursor: not-allowed; }
 
+        /* Panneau de diagnostic (treadmill.js) */
+        #debugPanel {
+            position: fixed;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            z-index: 10002;
+            max-height: 45vh;
+            overflow: auto;
+            margin: 0;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(17, 17, 17, .92);
+            color: #a5d6a7;
+            font: 12px/1.45 monospace;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+        #debugPanel[hidden] { display: none; }
+        #debugPanel strong { color: #fff; }
+        #debugPanel b { color: #ffeb3b; }
+
         /* Écrans peu hauts (barre du navigateur affichée, mode paysage...) */
         @media (max-height: 700px) {
             .center-container { gap: 8px; padding-top: 20px; padding-bottom: 10px; }
@@ -415,7 +437,9 @@
     </style>
 </head>
 <body>
-    <div id="appVersion" style="position:fixed;top:6px;left:8px;font-size:11px;color:#999;z-index:10001;pointer-events:none;">v1.7</div>
+    <div id="appVersion" style="position:fixed;top:0;left:0;padding:6px 10px;font-size:11px;color:#999;z-index:10001;user-select:none;">v1.8</div>
+    <!-- Diagnostic : toucher 5 fois la version pour afficher les données brutes du tapis -->
+    <pre id="debugPanel" hidden></pre>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-tabs">
         <header class="mdl-layout__header mdl-layout__header--scroll" style="justify-content:center;display:flex;">
             <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
@@ -543,8 +567,8 @@
     <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
     <!-- ?v= : à changer avec la version affichée (appVersion) et CACHE_NAME dans sw.js,
          pour que le navigateur ne mélange jamais une nouvelle page avec d'anciens scripts -->
-    <script src="treadmill.js?v=1.7"></script>
-    <script src="programs.js?v=1.7"></script>
+    <script src="treadmill.js?v=1.8"></script>
+    <script src="programs.js?v=1.8"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker non enregistré :', err));

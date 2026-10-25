@@ -325,6 +325,32 @@ function onDisconnected() {
     }
 }
 
+// --- Debug panel: tap the version label 5 times to show the raw treadmill data ---
+// Bytes that changed since the previous message are highlighted, to spot the counters.
+const debugPanel = document.getElementById('debugPanel');
+let debugTaps = [];
+let lastDebugBytes = null;
+document.getElementById('appVersion').addEventListener('click', () => {
+    const now = Date.now();
+    debugTaps = debugTaps.filter((t) => now - t < 2000).concat(now);
+    if (debugTaps.length >= 5) {
+        debugTaps = [];
+        debugPanel.hidden = !debugPanel.hidden;
+    }
+});
+function renderDebug(bytes, decoded) {
+    if (!debugPanel.hidden) {
+        let rows = '';
+        bytes.forEach((b, i) => {
+            if (i % 8 === 0) rows += (i ? '\n' : '') + String(i).padStart(2, '0') + ': ';
+            const hex = b.toString(16).padStart(2, '0');
+            rows += (lastDebugBytes && lastDebugBytes[i] !== b ? '<b>' + hex + '</b>' : hex) + ' ';
+        });
+        debugPanel.innerHTML = '<strong>Données du tapis (' + bytes.length + ' octets)</strong>\n' + rows + '\n\n' + decoded;
+    }
+    lastDebugBytes = bytes;
+}
+
 function handleNotification(event) {
     const value = event.target.value;
     // Logging for debugging
@@ -334,8 +360,10 @@ function handleNotification(event) {
         hexStr.push(value.getUint8(i).toString(16).padStart(2, "0"));
     }
     console.log("Payload (hex):", hexStr.join(" "));
+    const bytes = Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength));
     // Parse treadmill data from value (see treadmill_data.py for structure)
     if (value.byteLength < 31) {
+        renderDebug(bytes, "Message trop court : ignoré");
         treadmillData = {
             speed: "-",
             distance: "-",
@@ -387,6 +415,13 @@ function handleNotification(event) {
     };
     // Log parsed fields
     console.log("Parsed treadmill data:", treadmillData);
+    renderDebug(bytes,
+        "vitesse [3-4]     = " + current_speed + "\n" +
+        "distance [7-10]   = " + distance + "\n" +
+        "pas [14-17]       = " + steps + "\n" +
+        "calories [18-19]  = " + calories + "\n" +
+        "durée [20-23]     = " + duration + "\n" +
+        "état [26]         = 0x" + flags.toString(16).padStart(2, "0"));
     updateDashboard(treadmillData);
     updateRunningState(running_state);
 

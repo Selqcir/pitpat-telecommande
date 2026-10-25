@@ -5,7 +5,7 @@
 // - Bibliothèques externes (CDN, polices) : cache d'abord, elles ne changent pas.
 // Changer CACHE_NAME pour forcer le nettoyage de l'ancien cache.
 
-const CACHE_NAME = 'pitpat-v6';
+const CACHE_NAME = 'pitpat-v7';
 const NETWORK_TIMEOUT = 3000;
 
 const APP_FILES = [
