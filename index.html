@@ -48,34 +48,82 @@
             letter-spacing: .06em;
         }
         .app-header-row { display: flex; gap: 10px; align-items: stretch; }
+        /* Bouton Bluetooth : bleu plein pour se connecter, contour une fois connecté */
         #connectBtn {
             flex: 1;
             min-width: 0;
             height: auto;
-            min-height: 52px;
+            min-height: 60px;
             margin: 0;
             padding: 8px;
+            border: 2px solid #2196f3;
             border-radius: 12px;
             font-size: 1rem;
             font-weight: 700;
             line-height: 1.2;
             white-space: normal;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             background: #2196f3 !important;
             color: #fff !important;
             touch-action: manipulation;
         }
-        #statusChip {
-            flex: 0 0 auto;
+        #connectBtn .material-icons { font-size: 26px; }
+        #connectBtn[data-state="connecting"] { opacity: .75; }
+        #connectBtn[data-state="connected"] {
+            background: #fff !important;
+            color: #1976d2 !important;
+            box-shadow: none;
+        }
+
+        /* Badge d'état du tapis : icône colorée (masque CSS) + texte */
+        .status-badge {
+            --status-color: #9e9e9e;
+            --status-bg: #f5f5f5;
+            flex: 0 0 104px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: auto;
-            margin: 0;
-            padding: 0 14px;
+            gap: 2px;
+            padding: 4px;
+            box-sizing: border-box;
             border-radius: 12px;
-            font-weight: 700;
+            background: var(--status-bg);
+            color: var(--status-color);
+            transition: background .3s, color .3s;
         }
-        #statusChip .mdl-chip__text { font-size: .95rem; white-space: nowrap; }
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--status-color);
+            -webkit-mask: url(status-disconnected.png) center / contain no-repeat;
+            mask: url(status-disconnected.png) center / contain no-repeat;
+        }
+        .status-text { font-size: .8rem; font-weight: 800; white-space: nowrap; }
+        .status-badge[data-state="connecting"] { --status-color: #f9a825; --status-bg: #fff8e1; }
+        .status-badge[data-state="stopped"]    { --status-color: #455a64; --status-bg: #eceff1; }
+        .status-badge[data-state="starting"]   { --status-color: #f9a825; --status-bg: #fff8e1; }
+        .status-badge[data-state="running"]    { --status-color: #2e7d32; --status-bg: #e8f5e9; }
+        .status-badge[data-state="paused"]     { --status-color: #ef6c00; --status-bg: #fff3e0; }
+        .status-badge[data-state="stopped"] .status-icon,
+        .status-badge[data-state="paused"] .status-icon {
+            -webkit-mask-image: url(status-off.png);
+            mask-image: url(status-off.png);
+        }
+        .status-badge[data-state="starting"] .status-icon,
+        .status-badge[data-state="running"] .status-icon {
+            -webkit-mask-image: url(status-on.png);
+            mask-image: url(status-on.png);
+        }
+        @keyframes blink { 50% { opacity: .35; } }
+        @media (prefers-reduced-motion: no-preference) {
+            .status-badge[data-state="connecting"] .status-icon,
+            .status-badge[data-state="starting"] .status-icon,
+            #connectBtn[data-state="connecting"] .material-icons { animation: blink 1s ease-in-out infinite; }
+        }
 
         /* Reste de la page, centré dans l'espace sous l'en-tête */
         .app-main {
@@ -86,76 +134,123 @@
             gap: 14px;
         }
 
-        /* Boutons : grille de 2 colonnes */
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        /* Petits titres de section (VITESSE, VITESSE CIBLE) */
+        .section-title {
+            font-size: .8rem;
+            font-weight: 700;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: .06em;
         }
-        .controls .mdl-button {
-            height: auto;
-            min-height: 64px;
-            min-width: 0;
-            margin: 0;
-            padding: 8px;
-            border-radius: 14px;
-            font-size: 1rem;
+
+        /* Vitesse actuelle + statistiques de la séance */
+        .dashboard {
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 2px 8px #00000012;
+        }
+        .speed-display { display: flex; flex-direction: column; align-items: center; }
+        .speed-value {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 2px;
+            line-height: 1;
+        }
+        #speed { font-size: 3.4rem; font-weight: 800; color: #222; font-variant-numeric: tabular-nums; }
+        .speed-unit { font-size: 1.1rem; font-weight: 700; color: #777; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .stat { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+        .stat .material-icons { font-size: 20px; color: #607d8b; }
+        .stat-value {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .95rem;
             font-weight: 800;
-            line-height: 1.2;
-            white-space: normal;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat small { font-size: .7rem; color: #888; }
+
+        /* Bouton principal (Démarrer / Pause / Reprendre) + Arrêter, affiché seulement pendant une séance */
+        .controls { display: flex; gap: 10px; }
+        .ctrl-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 64px;
+            padding: 0 16px;
+            border: none;
+            white-space: nowrap;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 2px 6px #00000026;
+            cursor: pointer;
             touch-action: manipulation;
+            transition: transform .1s, background .2s;
         }
-        #startBtn { background: #2e7d32 !important; color: #fff !important; }
-        #stopBtn { background: #b71c1c !important; color: #fff !important; }
-        .btn-red:disabled, .btn-green:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            box-shadow: none !important;
-        }
+        .ctrl-btn[hidden] { display: none; }
+        .ctrl-btn .material-icons { flex-shrink: 0; font-size: 28px; }
+        .ctrl-label { overflow: hidden; text-overflow: ellipsis; }
+        .ctrl-start { background: #2e7d32; }
+        .ctrl-start[data-action="pause"] { background: #ef6c00; }
+        .ctrl-start[data-action="starting"] { background: #607d8b; }
+        .ctrl-stop { flex: 0 0 auto; background: #b71c1c; }
+        .ctrl-btn:disabled { opacity: .4; box-shadow: none; cursor: not-allowed; }
+        .ctrl-btn:active:not(:disabled) { transform: scale(.97); }
 
-        /* Seule la carte Vitesse est affichée */
-        .dashboard .mdl-card { display: none; }
-        .dashboard .mdl-card:first-child {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-sizing: border-box;
-            width: 100%;
-            min-height: 0;
-            padding: 12px;
-            border-radius: 16px;
-            text-align: center;
-        }
-        .dashboard .mdl-card__title { padding: 0; justify-content: center; }
-        .dashboard .card-title { font-size: 1rem; color: #777; }
-        .dashboard .card-value {
-            width: auto;
-            padding: 4px 0 0;
-            font-size: 3rem;
-            line-height: 1.1;
-            font-weight: 700;
-            color: #222;
-            white-space: nowrap;
-        }
-
-        /* Curseur de vitesse */
+        /* Vitesse cible : − [curseur] + */
         .slider-group {
             box-sizing: border-box;
-            padding: 14px 8px;
+            padding: 10px 12px;
             border-radius: 14px;
             background: #fff;
             box-shadow: 0 2px 8px #00000012;
         }
-        .slider-label {
-            display: block;
-            margin: 0 8px 10px;
-            font-size: 1rem;
-            font-weight: 700;
+        .slider-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
         }
+        .slider-target { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .slider-row { display: flex; align-items: center; gap: 4px; }
+        .slider-wrap { flex: 1; min-width: 0; }
         .mdl-slider { width: 100%; }
+        .step-btn {
+            flex: 0 0 52px;
+            height: 52px;
+            padding: 0;
+            border: 2px solid #cfd8dc;
+            border-radius: 12px;
+            background: #fff;
+            color: #37474f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .step-btn .material-icons { font-size: 28px; }
+        .step-btn:disabled { opacity: .4; cursor: not-allowed; }
+        .step-btn:active:not(:disabled) { background: #eceff1; }
 
         /* Programmes de marche (programs.js) */
         .program-group {
@@ -301,28 +396,26 @@
         .modal-btn--primary { background: #6a1b9a; color: #fff; }
         .modal-btn:disabled { opacity: .45; cursor: not-allowed; }
 
-        /* Couleurs de l'état du tapis (utilisées par treadmill.js) */
-        .chip-connected { background: #388e3c !important; color: #fff !important; }
-        .chip-connecting, .chip-paused { background: #fbc02d !important; color: #222 !important; }
-        .chip-disconnected { background: #d32f2f !important; color: #fff !important; }
-
         /* Écrans peu hauts (barre du navigateur affichée, mode paysage...) */
         @media (max-height: 700px) {
             .center-container { gap: 8px; padding-top: 20px; padding-bottom: 10px; }
-            .controls .mdl-button { min-height: 48px; }
-            #connectBtn { min-height: 44px; }
+            .ctrl-btn { min-height: 54px; }
+            #connectBtn { min-height: 52px; }
+            .status-icon { width: 34px; height: 34px; }
             .app-header, .app-main { gap: 8px; }
-            .dashboard .mdl-card:first-child { padding: 8px; }
-            .dashboard .card-value { font-size: 2.2rem; }
-            .slider-group { padding: 8px; }
-            .slider-label { margin-bottom: 6px; }
+            .dashboard { padding: 8px 10px; }
+            #speed { font-size: 2.8rem; }
+            .stats { margin-top: 6px; padding-top: 6px; }
+            .slider-group { padding: 8px 10px; }
+            .slider-head { margin-bottom: 2px; }
+            .step-btn { flex-basis: 46px; height: 46px; }
             body.program-running .program-group { padding: 8px; }
             #programBtn { min-height: 48px; }
         }
     </style>
 </head>
 <body>
-    <div id="appVersion" style="position:fixed;top:6px;left:8px;font-size:11px;color:#999;z-index:10001;pointer-events:none;">v1.3</div>
+    <div id="appVersion" style="position:fixed;top:6px;left:8px;font-size:11px;color:#999;z-index:10001;pointer-events:none;">v1.6</div>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-tabs">
         <header class="mdl-layout__header mdl-layout__header--scroll" style="justify-content:center;display:flex;">
             <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
@@ -335,42 +428,40 @@
                     <div class="app-header">
                         <div class="app-title">TÉLÉCOMMANDE PITPAT</div>
                         <div class="app-header-row">
-                            <button id="connectBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--primary">Connexion Bluetooth</button>
-                            <span id="statusChip" class="mdl-chip chip-disconnected" role="status"><span class="mdl-chip__text">Déconnecté</span></span>
+                            <button id="connectBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" data-state="disconnected"><i class="material-icons" aria-hidden="true">bluetooth_disabled</i><span class="connect-label">Connecter</span></button>
+                            <div id="statusChip" class="status-badge" data-state="disconnected" role="status">
+                                <span class="status-icon" aria-hidden="true"></span>
+                                <span class="status-text">Déconnecté</span>
+                            </div>
                         </div>
                     </div>
                     <div class="app-main">
                     <div class="dashboard">
-                        <div class="mdl-card mdl-shadow--2dp">
-                            <div class="mdl-card__title"><span class="card-title">Vitesse</span></div>
-                            <div class="mdl-card__supporting-text card-value" id="speed">-</div>
+                        <div class="speed-display">
+                            <span class="section-title">Vitesse</span>
+                            <div class="speed-value"><span id="speed">-</span><span id="speedUnit" class="speed-unit">km/h</span></div>
                         </div>
-                        <div class="mdl-card mdl-shadow--2dp">
-                            <div class="mdl-card__title"><span class="card-title">Distance</span></div>
-                            <div class="mdl-card__supporting-text card-value" id="distance">-</div>
-                        </div>
-                        <div class="mdl-card mdl-shadow--2dp">
-                            <div class="mdl-card__title"><span class="card-title">Calories</span></div>
-                            <div class="mdl-card__supporting-text card-value" id="calories">-</div>
-                        </div>
-                        <div class="mdl-card mdl-shadow--2dp">
-                            <div class="mdl-card__title"><span class="card-title">Pas</span></div>
-                            <div class="mdl-card__supporting-text card-value" id="steps">-</div>
-                        </div>
-                        <div class="mdl-card mdl-shadow--2dp">
-                            <div class="mdl-card__title"><span class="card-title">Durée</span></div>
-                            <div class="mdl-card__supporting-text card-value" id="duration">-</div>
+                        <div class="stats">
+                            <div class="stat"><i class="material-icons" aria-hidden="true">timer</i><span id="duration" class="stat-value">-</span><small>Durée</small></div>
+                            <div class="stat"><i class="material-icons" aria-hidden="true">straighten</i><span id="distance" class="stat-value">-</span><small>Distance</small></div>
+                            <div class="stat"><i class="material-icons" aria-hidden="true">local_fire_department</i><span id="calories" class="stat-value">-</span><small>Calories</small></div>
+                            <div class="stat"><i class="material-icons" aria-hidden="true">directions_walk</i><span id="steps" class="stat-value">-</span><small>Pas</small></div>
                         </div>
                     </div>
                     <div class="controls">
-                        <button id="startBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect btn-green" disabled>DÉMARRER</button>
-                        <button id="stopBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect btn-red" disabled>ARRÊTER</button>
-                        <button id="speedDownBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" disabled>− RALENTIR</button>
-                        <button id="speedUpBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect" disabled>+ ACCÉLÉRER</button>
+                        <button id="startBtn" class="ctrl-btn ctrl-start" data-action="start" disabled><i class="material-icons" aria-hidden="true">play_arrow</i><span class="ctrl-label">DÉMARRER</span></button>
+                        <button id="stopBtn" class="ctrl-btn ctrl-stop" hidden disabled><i class="material-icons" aria-hidden="true">stop</i><span class="ctrl-label">ARRÊTER</span></button>
                     </div>
                     <div class="slider-group">
-                        <label class="slider-label" for="speedSlider">Régler la vitesse (km/h) : <span id="sliderValue">0</span></label>
-                        <input type="range" id="speedSlider" min="1" max="6" step="0.1" value="1" class="mdl-slider mdl-js-slider">
+                        <div class="slider-head">
+                            <label class="section-title" for="speedSlider">Vitesse cible</label>
+                            <span class="slider-target"><span id="sliderValue">1.0</span> km/h</span>
+                        </div>
+                        <div class="slider-row">
+                            <button id="speedDownBtn" class="step-btn" aria-label="Ralentir de 0,1 km/h" disabled><i class="material-icons" aria-hidden="true">remove</i></button>
+                            <div class="slider-wrap"><input type="range" id="speedSlider" min="1" max="6" step="0.1" value="1" class="mdl-slider mdl-js-slider"></div>
+                            <button id="speedUpBtn" class="step-btn" aria-label="Accélérer de 0,1 km/h" disabled><i class="material-icons" aria-hidden="true">add</i></button>
+                        </div>
                     </div>
                     <div class="program-group">
                         <button id="programBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">▶ PROGRAMMES</button>

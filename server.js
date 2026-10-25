@@ -21,7 +21,8 @@ const ROOT = __dirname;
 // Seuls les fichiers de l'application sont servis (pas server.js, .git, etc.)
 const ALLOWED_FILES = new Set([
     'index.html', 'treadmill.js', 'programs.js',
-    'sw.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'
+    'sw.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
+    'status-disconnected.png', 'status-off.png', 'status-on.png'
 ]);
 
 const MIME_TYPES = {

@@ -9,6 +9,7 @@ const WRITE_CHAR_UUID = "0000fba1-0000-1000-8000-00805f9b34fb";
 const connectBtn = document.getElementById('connectBtn');
 const statusDiv = document.getElementById('status');
 const speedDiv = document.getElementById('speed');
+const speedUnitSpan = document.getElementById('speedUnit');
 const distanceDiv = document.getElementById('distance');
 const caloriesDiv = document.getElementById('calories');
 const stepsDiv = document.getElementById('steps');
@@ -96,42 +97,40 @@ let curTargetSpeed = 1000; // in treadmill units
 
 // --- Helper Functions ---
 
-function setStatus(msg) {
-    let displayMsg = msg;
-    if (msg.toLowerCase().includes('connecting')) {
-        displayMsg = 'Connecting';
-    } else if (msg.toLowerCase().includes('not connected') || msg.toLowerCase().includes('disconnect')) {
-        displayMsg = 'Disconnected';
-    } else if (msg.toLowerCase().includes('paused')) {
-        displayMsg = 'Paused';
-    } else if (msg.toLowerCase().includes('running')) {
-        displayMsg = 'Running';
-    } else if (msg.toLowerCase().includes('stopped')) {
-        displayMsg = 'Stopped';
-    }
-    const labels = {
-        Connecting: 'Connexion…',
-        Disconnected: 'Déconnecté',
-        Paused: 'En pause',
-        Running: 'En marche',
-        Stopped: 'Arrêté'
-    };
+// Treadmill status badge: the icon and colour come from the CSS, via data-state
+const STATUS_LABELS = {
+    Disconnected: 'Déconnecté',
+    Connecting: 'Connexion…',
+    Stopped: 'Arrêté',
+    Starting: 'Démarrage…',
+    Running: 'En marche',
+    Paused: 'En pause'
+};
+function setStatus(state) {
+    if (!STATUS_LABELS[state]) state = 'Disconnected';
     if (statusChip) {
-        statusChip.querySelector('.mdl-chip__text').textContent = labels[displayMsg] || displayMsg;
-        statusChip.classList.remove('chip-connected', 'chip-connecting', 'chip-disconnected', 'chip-paused');
-        if (displayMsg === 'Running') {
-            statusChip.classList.add('chip-connected');
-        } else if (displayMsg === 'Connecting') {
-            statusChip.classList.add('chip-connecting');
-        } else if (displayMsg === 'Paused') {
-            statusChip.classList.add('chip-paused');
-        } else {
-            statusChip.classList.add('chip-disconnected');
-        }
+        statusChip.dataset.state = state.toLowerCase();
+        statusChip.querySelector('.status-text').textContent = STATUS_LABELS[state];
     }
 }
+
+// Bluetooth button: 'disconnected' | 'connecting' | 'connected'
+const CONNECT_BUTTON = {
+    disconnected: { icon: 'bluetooth_disabled', label: 'Connecter' },
+    connecting: { icon: 'bluetooth_searching', label: 'Connexion…' },
+    connected: { icon: 'bluetooth_connected', label: 'Déconnecter' }
+};
+function setConnectButton(state) {
+    connectBtn.dataset.state = state;
+    connectBtn.disabled = state === 'connecting';
+    connectBtn.querySelector('.material-icons').textContent = CONNECT_BUTTON[state].icon;
+    connectBtn.querySelector('.connect-label').textContent = CONNECT_BUTTON[state].label;
+}
 function updateDashboard(data) {
-    speedDiv.textContent = data.speed || '-';
+    // data.speed is "3.50 km/h": the number and the unit are shown separately
+    const [speedValue, speedUnit] = (data.speed || '-').split(' ');
+    speedDiv.textContent = speedValue;
+    if (speedUnit) speedUnitSpan.textContent = speedUnit;
     distanceDiv.textContent = data.distance || '-';
     caloriesDiv.textContent = data.calories || '-';
     stepsDiv.textContent = (data.steps !== undefined && data.steps !== null) ? data.steps : '-';
@@ -150,36 +149,60 @@ function enableControls(enable) {
     speedDownBtn.disabled = !enable;
     speedSlider.disabled = !enable;
 }
+// Main button: Démarrer -> Démarrage… -> Pause -> Reprendre.
+// The Stop button is only shown while a session is in progress.
+const START_BUTTON = {
+    start: { icon: 'play_arrow', label: 'DÉMARRER' },
+    starting: { icon: 'hourglass_empty', label: 'DÉMARRAGE…' },
+    pause: { icon: 'pause', label: 'PAUSE' },
+    resume: { icon: 'play_arrow', label: 'REPRENDRE' }
+};
+function setStartButton(action) {
+    startBtn.dataset.action = action;
+    startBtn.querySelector('.material-icons').textContent = START_BUTTON[action].icon;
+    startBtn.querySelector('.ctrl-label').textContent = START_BUTTON[action].label;
+}
+function showStopButton(show) {
+    stopBtn.hidden = !show;
+    stopBtn.disabled = !show;
+}
 function updateRunningState(state) {
     runningState = state;
     if (!connected) {
         enableControls(false);
-        startBtn.textContent = "DÉMARRER";
+        setStartButton('start');
+        showStopButton(false);
         setStatus('Disconnected');
     } else {
         switch (state) {
             case 0: // Starting
                 enableControls(false);
-                startBtn.textContent = "DÉMARRER";
+                setStartButton('starting');
+                showStopButton(true);
+                setStatus('Starting');
                 break;
             case 1: // Running
                 enableControls(true);
-                startBtn.textContent = "PAUSE";
+                setStartButton('pause');
+                showStopButton(true);
                 setStatus('Running');
                 break;
             case 2: // Paused
                 enableControls(true);
-                startBtn.textContent = "DÉMARRER";
+                setStartButton('resume');
+                showStopButton(true);
                 setStatus('Paused');
                 break;
             case 3: // Stopped
                 enableControls(true);
-                startBtn.textContent = "DÉMARRER";
+                setStartButton('start');
+                showStopButton(false);
                 setStatus('Stopped');
                 break;
             default:
                 enableControls(false);
-                startBtn.textContent = "DÉMARRER";
+                setStartButton('start');
+                showStopButton(false);
                 setStatus('Disconnected');
         }
     }
@@ -205,6 +228,7 @@ function send_data(packet) {
 // --- Bluetooth Logic ---
 async function connectBluetooth() {
     setStatus('Connecting');
+    setConnectButton('connecting');
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
     try {
         console.log("Requesting Bluetooth device...");
@@ -250,7 +274,7 @@ async function connectBluetooth() {
         notifyChar.addEventListener('characteristicvaluechanged', handleNotification);
         connected = true;
         setStatus('Stopped');
-        connectBtn.textContent = "Déconnexion";
+        setConnectButton('connected');
         updateRunningState(3);
         // No heartbeat loop, just send heartbeat or data on notification
         if (loadingOverlay) loadingOverlay.style.display = 'none';
@@ -259,7 +283,7 @@ async function connectBluetooth() {
         showToast("Erreur Bluetooth : " + err);
         setStatus('Disconnected');
         connected = false;
-        connectBtn.textContent = "Connexion Bluetooth";
+        setConnectButton('disconnected');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         // stopHeartbeatLoop();
     }
@@ -276,7 +300,7 @@ function disconnectBluetooth() {
 function onDisconnected() {
     connected = false;
     setStatus('Disconnected');
-    connectBtn.textContent = "Connexion Bluetooth";
+    setConnectButton('disconnected');
     updateRunningState(3);
     if (sessionActive && sessionStartData) {
         finishSession('Disconnected');
@@ -540,7 +564,7 @@ speedDownBtn.addEventListener('click', () => {
 });
 
 speedSlider.addEventListener('input', () => {
-    sliderValue.textContent = speedSlider.value;
+    sliderValue.textContent = parseFloat(speedSlider.value).toFixed(1);
 });
 speedSlider.addEventListener('change', () => {
     if (!connected) return;
@@ -550,8 +574,9 @@ speedSlider.addEventListener('change', () => {
 
 // --- Initialize ---
 updateDashboard({});
+setConnectButton('disconnected');
 updateRunningState(3);
-sliderValue.textContent = speedSlider.value;
+sliderValue.textContent = parseFloat(speedSlider.value).toFixed(1);
 renderSessionTable();
 
 function saveCurrentSession(session) {

@@ -5,7 +5,7 @@
 // - Bibliothèques externes (CDN, polices) : cache d'abord, elles ne changent pas.
 // Changer CACHE_NAME pour forcer le nettoyage de l'ancien cache.
 
-const CACHE_NAME = 'pitpat-v2';
+const CACHE_NAME = 'pitpat-v5';
 const NETWORK_TIMEOUT = 3000;
 
 const APP_FILES = [
@@ -15,7 +15,10 @@ const APP_FILES = [
     'programs.js',
     'manifest.webmanifest',
     'icon-192.png',
-    'icon-512.png'
+    'icon-512.png',
+    'status-disconnected.png',
+    'status-off.png',
+    'status-on.png'
 ];
 
 // Mis en cache dès l'installation pour que l'application fonctionne hors ligne
