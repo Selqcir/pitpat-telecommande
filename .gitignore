@@ -1,0 +1,5 @@
+# Certificat HTTPS local : la clé privée ne doit jamais être publiée
+cert.pem
+key.pem
+*.pem
+node_modules/

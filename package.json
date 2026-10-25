@@ -1,0 +1,13 @@
+{
+  "name": "pitpat-telecommande",
+  "version": "1.0.0",
+  "description": "Télécommande web Bluetooth pour tapis de marche PitPat",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}

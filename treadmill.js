@@ -109,8 +109,15 @@ function setStatus(msg) {
     } else if (msg.toLowerCase().includes('stopped')) {
         displayMsg = 'Stopped';
     }
+    const labels = {
+        Connecting: 'Connexion…',
+        Disconnected: 'Déconnecté',
+        Paused: 'En pause',
+        Running: 'En marche',
+        Stopped: 'Arrêté'
+    };
     if (statusChip) {
-        statusChip.querySelector('.mdl-chip__text').textContent = displayMsg;
+        statusChip.querySelector('.mdl-chip__text').textContent = labels[displayMsg] || displayMsg;
         statusChip.classList.remove('chip-connected', 'chip-connecting', 'chip-disconnected', 'chip-paused');
         if (displayMsg === 'Running') {
             statusChip.classList.add('chip-connected');
@@ -147,32 +154,32 @@ function updateRunningState(state) {
     runningState = state;
     if (!connected) {
         enableControls(false);
-        startBtn.textContent = "Start";
+        startBtn.textContent = "DÉMARRER";
         setStatus('Disconnected');
     } else {
         switch (state) {
             case 0: // Starting
                 enableControls(false);
-                startBtn.textContent = "Start";
+                startBtn.textContent = "DÉMARRER";
                 break;
             case 1: // Running
                 enableControls(true);
-                startBtn.textContent = "Pause";
+                startBtn.textContent = "PAUSE";
                 setStatus('Running');
                 break;
             case 2: // Paused
                 enableControls(true);
-                startBtn.textContent = "Start";
+                startBtn.textContent = "DÉMARRER";
                 setStatus('Paused');
                 break;
             case 3: // Stopped
                 enableControls(true);
-                startBtn.textContent = "Start";
+                startBtn.textContent = "DÉMARRER";
                 setStatus('Stopped');
                 break;
             default:
                 enableControls(false);
-                startBtn.textContent = "Start";
+                startBtn.textContent = "DÉMARRER";
                 setStatus('Disconnected');
         }
     }
@@ -243,16 +250,16 @@ async function connectBluetooth() {
         notifyChar.addEventListener('characteristicvaluechanged', handleNotification);
         connected = true;
         setStatus('Stopped');
-        connectBtn.textContent = "Disconnect";
+        connectBtn.textContent = "Déconnexion";
         updateRunningState(3);
         // No heartbeat loop, just send heartbeat or data on notification
         if (loadingOverlay) loadingOverlay.style.display = 'none';
     } catch (err) {
         console.error("Bluetooth connection error:", err);
-        showToast("Bluetooth error: " + err);
+        showToast("Erreur Bluetooth : " + err);
         setStatus('Disconnected');
         connected = false;
-        connectBtn.textContent = "Connect";
+        connectBtn.textContent = "Connexion Bluetooth";
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         // stopHeartbeatLoop();
     }
@@ -269,7 +276,7 @@ function disconnectBluetooth() {
 function onDisconnected() {
     connected = false;
     setStatus('Disconnected');
-    connectBtn.textContent = "Connect";
+    connectBtn.textContent = "Connexion Bluetooth";
     updateRunningState(3);
     if (sessionActive && sessionStartData) {
         finishSession('Disconnected');
@@ -325,7 +332,7 @@ function handleNotification(event) {
     else if (running_state_bits === 16) running_state = 2;
     else running_state = 3;
     const statusArr = ["Starting", "Running", "Paused", "Stopped"];
-    const speed_unit = unit_mode === 1 ? "mph" : "kph";
+    const speed_unit = unit_mode === 1 ? "mph" : "km/h";
     const distance_unit = unit_mode === 1 ? "mi" : "km";
     treadmillData = {
         speed: (current_speed / 1000).toFixed(2) + " " + speed_unit,
@@ -416,7 +423,7 @@ async function sendCommand(packet) {
         await writeChar.writeValue(packet);
     } catch (err) {
         console.error("Failed to send command:", err);
-        showToast("Failed to send command: " + err);
+        showToast("Échec de l'envoi de la commande : " + err);
     }
 }
 
@@ -507,15 +514,28 @@ stopBtn.addEventListener('click', () => {
     send_data(makePacket("stop"));
 });
 
+// Keep the slider in sync with the target speed set by the +/- buttons
+function syncSlider() {
+    const kph = (curTargetSpeed / 1000).toFixed(1);
+    if (speedSlider.MaterialSlider) {
+        speedSlider.MaterialSlider.change(kph);
+    } else {
+        speedSlider.value = kph;
+    }
+    sliderValue.textContent = kph;
+}
+
 speedUpBtn.addEventListener('click', () => {
     if (!connected) return;
     curTargetSpeed = Math.min(curTargetSpeed + 100, 6000);
+    syncSlider();
     send_data(makePacket("set_speed", curTargetSpeed));
 });
 
 speedDownBtn.addEventListener('click', () => {
     if (!connected) return;
-    curTargetSpeed = Math.max(curTargetSpeed - 1000, 1000);
+    curTargetSpeed = Math.max(curTargetSpeed - 100, 1000);
+    syncSlider();
     send_data(makePacket("set_speed", curTargetSpeed));
 });
 
